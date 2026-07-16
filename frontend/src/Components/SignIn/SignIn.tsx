@@ -1,23 +1,56 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
 import './SignIn.css';
-import { useState, ChangeEvent, FormEvent } from "react";
-import axios from "axios";
+import { useState, type ChangeEvent, type FormEvent } from 'react';
+import axios from 'axios';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import {
+  FiAlertCircle,
+  FiArrowRight,
+  FiCheckCircle,
+  FiEye,
+  FiEyeOff,
+  FiLock,
+  FiMail,
+  FiShield,
+} from 'react-icons/fi';
+
+const pageVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const liftVariants: Variants = {
+  hidden: { opacity: 0, y: 18, scale: 0.98 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+  },
+};
 
 function SignIn() {
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  }
-
-  const navigate = useNavigate();
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,17 +59,19 @@ function SignIn() {
       setError('All fields are required');
       return;
     }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('Please enter a valid email address');
       return;
     }
+
     setError('');
     setLoading(true);
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/signin`, {
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
 
       localStorage.setItem('token', response.data.token);
@@ -52,108 +87,177 @@ function SignIn() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="signin-page">
-      <div className="signin-container">
-        <div className="signin-left">
-          <div className="signin-content">
-            <div className="signin-icon">🔐</div>
-            <h1 className="signin-title">Welcome Back</h1>
-            <p className="signin-subtitle">Sign in to access your premium account</p>
-            <ul className="signin-features">
-              <li>✓ Secure authentication</li>
-              <li>✓ Fast and reliable</li>
-              <li>✓ Premium features</li>
-            </ul>
-          </div>
-          <div className="floating-shapes">
-            <div className="shape shape-1"></div>
-            <div className="shape shape-2"></div>
-            <div className="shape shape-3"></div>
-          </div>
-        </div>
+    <motion.main className="auth-page" variants={pageVariants} initial="hidden" animate="show">
+      <span className="auth-ribbon auth-ribbon--one" aria-hidden="true" />
+      <span className="auth-ribbon auth-ribbon--two" aria-hidden="true" />
 
-        <div className="signin-right">
-          <div className="signin-card">
-            <div className="card-header">
-              <h2>Sign In</h2>
-              <p>Access your account</p>
+      <motion.div className="auth-shell auth-shell--signin" variants={liftVariants}>
+        <section className="auth-hero" aria-labelledby="signin-hero-title">
+          <motion.div variants={liftVariants}>
+            <Link className="auth-brand" to="/signin" aria-label="AuthFlow sign in">
+              <span className="auth-brand__mark" aria-hidden="true">
+                <FiShield />
+              </span>
+              <span>AuthFlow</span>
+            </Link>
+          </motion.div>
+
+          <motion.div variants={liftVariants}>
+            <span className="auth-eyebrow">
+              <FiShield aria-hidden="true" />
+              Secure access
+            </span>
+            <h1 className="auth-title" id="signin-hero-title">
+              Welcome back
+              <span className="auth-title__accent">to your workspace.</span>
+            </h1>
+            <p className="auth-copy">
+              A calm, premium authentication surface built around the same email and password flow
+              your backend already supports.
+            </p>
+            <div className="auth-hero-actions">
+              <Link to="/signup" className="auth-hero-link">
+                Create account <FiArrowRight aria-hidden="true" />
+              </Link>
             </div>
+          </motion.div>
 
-            <form onSubmit={handleSubmit} className="signin-form">
-              <div className="form-group">
-                <label htmlFor="email">Email Address</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">✉️</span>
+          <motion.div className="auth-feature-grid" variants={liftVariants}>
+            <div className="auth-feature">
+              <FiLock aria-hidden="true" />
+              <strong>Encrypted</strong>
+              <span>JWT-secured credential flow.</span>
+            </div>
+            <div className="auth-feature">
+              <FiCheckCircle aria-hidden="true" />
+              <strong>Validated</strong>
+              <span>Client-side checks on every field.</span>
+            </div>
+            <div className="auth-feature">
+              <FiShield aria-hidden="true" />
+              <strong>Protected</strong>
+              <span>bcrypt password hashing.</span>
+            </div>
+          </motion.div>
+        </section>
+
+        <section className="auth-card-panel" aria-labelledby="signin-title">
+          <motion.div className="auth-card" variants={liftVariants}>
+            <header className="auth-card__header">
+              <p className="auth-kicker">
+                <FiShield aria-hidden="true" />
+                Sign in
+              </p>
+              <h2 id="signin-title">Access your account</h2>
+              <p>Enter your registered email and password.</p>
+            </header>
+
+            <form onSubmit={handleSubmit} className="auth-form" noValidate>
+              <motion.div className="auth-floating-field" variants={liftVariants}>
+                <FiMail className="auth-field-icon" aria-hidden="true" />
+                <input
+                  type="email"
+                  className="auth-input"
+                  id="signin-email"
+                  name="email"
+                  placeholder=" "
+                  value={formData.email}
+                  onChange={handleChange}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'signin-error' : undefined}
+                  autoComplete="email"
+                  required
+                />
+                <label htmlFor="signin-email">Email address</label>
+              </motion.div>
+
+              <motion.div className="auth-floating-field" variants={liftVariants}>
+                <FiLock className="auth-field-icon" aria-hidden="true" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  id="signin-password"
+                  name="password"
+                  placeholder=" "
+                  value={formData.password}
+                  onChange={handleChange}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'signin-error' : undefined}
+                  autoComplete="current-password"
+                  required
+                />
+                <label htmlFor="signin-password">Password</label>
+                <button
+                  type="button"
+                  className="auth-password-toggle"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
+                </button>
+              </motion.div>
+
+              <div className="auth-row">
+                <label className="auth-check">
                   <input
-                    type="email"
-                    className="form-input"
-                    id="email"
-                    name="email"
-                    placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                   />
-                </div>
+                  <span>Remember me</span>
+                </label>
+                <a href="#" className="auth-forgot" onClick={(e) => e.preventDefault()}>
+                  Forgot password?
+                </a>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">🔑</span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    className="form-input"
-                    id="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="toggle-password"
-                    onClick={() => setShowPassword(!showPassword)}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    id="signin-error"
+                    className="auth-alert auth-alert--error"
+                    role="alert"
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: [0, -8, 8, -4, 0] }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.32 }}
                   >
-                    {showPassword ? '👁️' : '👀'}
-                  </button>
-                </div>
-              </div>
+                    <FiAlertCircle aria-hidden="true" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {error && <div className="error-message">{error}</div>}
-
-              <button type="submit" className="btn-signin" disabled={loading}>
+              <motion.button
+                type="submit"
+                className="auth-button"
+                disabled={loading}
+                whileTap={{ scale: 0.98 }}
+              >
                 {loading ? (
                   <>
-                    <span className="spinner"></span>
-                    Signing in...
+                    <span className="auth-spinner" aria-hidden="true" />
+                    Signing in
                   </>
                 ) : (
-                  'Sign In'
+                  <>
+                    Sign in <FiArrowRight aria-hidden="true" />
+                  </>
                 )}
-              </button>
+              </motion.button>
             </form>
 
-            <div className="signin-divider">
-              <span>New to Premium?</span>
-            </div>
-
-            <Link to="/signup" className="btn-signup-link">
-              Create an account
-            </Link>
-
-            <p className="signin-footer">
-              Having trouble? <a href="#">Get help</a>
+            <p className="auth-footer">
+              New here? <Link to="/signup">Create an account</Link>
             </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+          </motion.div>
+        </section>
+      </motion.div>
+    </motion.main>
+  );
 }
 
 export default SignIn;
